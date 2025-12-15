@@ -109,7 +109,10 @@ export async function getEventos(): Promise<Evento[]> {
       .select("*")
       .order("data", { ascending: false });
 
-    if (error) throw error;
+    if (error) {
+      const errorMsg = error instanceof Error ? error.message : JSON.stringify(error);
+      throw new Error(`Supabase error: ${errorMsg}`);
+    }
 
     const eventosComDetalhes = await Promise.all(
       (eventos || []).map(async (evento) => {
@@ -134,7 +137,8 @@ export async function getEventos(): Promise<Evento[]> {
 
     return eventosComDetalhes;
   } catch (error) {
-    console.error("Erro ao buscar eventos:", error);
+    const errorMsg = error instanceof Error ? error.message : JSON.stringify(error);
+    console.error("Erro ao buscar eventos:", errorMsg);
     throw error;
   }
 }
