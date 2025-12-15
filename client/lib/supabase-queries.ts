@@ -1,4 +1,5 @@
 import { supabase } from "./supabase";
+import type { Status } from "@/data/mock";
 
 export interface OdsEvento {
   id: number;
