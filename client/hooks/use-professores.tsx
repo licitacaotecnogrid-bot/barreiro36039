@@ -1,6 +1,13 @@
 import React, { createContext, useState, useContext, ReactNode, useEffect } from "react";
-import type { ProfessorCoordenador } from "@/data/mock";
-import { getApiUrl } from "@/lib/api";
+import {
+  getProfessores,
+  createProfessor as supabaseCreateProfessor,
+  updateProfessor as supabaseUpdateProfessor,
+  deleteProfessor as supabaseDeleteProfessor,
+  ProfessorCoordenador,
+} from "@/lib/supabase-queries";
+
+export type { ProfessorCoordenador };
 
 interface ProfessoresContextType {
   professores: ProfessorCoordenador[];
@@ -24,9 +31,7 @@ export function ProfessoresProvider({ children }: { children: ReactNode }) {
     try {
       setLoading(true);
       setError(null);
-      const response = await fetch(getApiUrl("/professores"));
-      if (!response.ok) throw new Error("Failed to fetch professores");
-      const data = await response.json();
+      const data = await getProfessores();
       setProfessores(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erro ao buscar professores");
@@ -42,12 +47,7 @@ export function ProfessoresProvider({ children }: { children: ReactNode }) {
 
   const addProfessor = async (professor: Omit<ProfessorCoordenador, "id">) => {
     try {
-      const response = await fetch(getApiUrl("/professores"), {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(professor),
-      });
-      if (!response.ok) throw new Error("Failed to create professor");
+      await supabaseCreateProfessor(professor);
       await fetchProfessores();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erro ao criar professor");
@@ -57,12 +57,7 @@ export function ProfessoresProvider({ children }: { children: ReactNode }) {
 
   const updateProfessor = async (id: number, updates: Partial<ProfessorCoordenador>) => {
     try {
-      const response = await fetch(getApiUrl(`/professores/${id}`), {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(updates),
-      });
-      if (!response.ok) throw new Error("Failed to update professor");
+      await supabaseUpdateProfessor(id, updates);
       await fetchProfessores();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erro ao atualizar professor");
@@ -72,10 +67,7 @@ export function ProfessoresProvider({ children }: { children: ReactNode }) {
 
   const deleteProfessor = async (id: number) => {
     try {
-      const response = await fetch(getApiUrl(`/professores/${id}`), {
-        method: "DELETE",
-      });
-      if (!response.ok) throw new Error("Failed to delete professor");
+      await supabaseDeleteProfessor(id);
       await fetchProfessores();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erro ao deletar professor");
