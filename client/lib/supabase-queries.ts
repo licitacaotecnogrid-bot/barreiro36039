@@ -194,7 +194,10 @@ export async function createEvento(
       .select()
       .single();
 
-    if (eventoError) throw eventoError;
+    if (eventoError) {
+      const errorMsg = eventoError instanceof Error ? eventoError.message : JSON.stringify(eventoError);
+      throw new Error(`Supabase error: ${errorMsg}`);
+    }
 
     const eventoId = newEvento.id;
 
@@ -417,11 +420,15 @@ export async function getMaterias(): Promise<Materia[]> {
       .select("*")
       .order("nome", { ascending: true });
 
-    if (error) throw error;
+    if (error) {
+      const errorMsg = error instanceof Error ? error.message : JSON.stringify(error);
+      throw new Error(`Supabase error: ${errorMsg}`);
+    }
 
     return data || [];
   } catch (error) {
-    console.error("Erro ao buscar matérias:", error);
+    const errorMsg = error instanceof Error ? error.message : JSON.stringify(error);
+    console.error("Erro ao buscar matérias:", errorMsg);
     throw error;
   }
 }
@@ -506,7 +513,10 @@ export async function getProfessores(): Promise<ProfessorCoordenador[]> {
       .eq("cargo", "Coordenador")
       .order("nome", { ascending: true });
 
-    if (error) throw error;
+    if (error) {
+      const errorMsg = error instanceof Error ? error.message : JSON.stringify(error);
+      throw new Error(`Supabase error: ${errorMsg}`);
+    }
 
     return (data || []).map((p: any) => ({
       id: p.id,
@@ -516,7 +526,8 @@ export async function getProfessores(): Promise<ProfessorCoordenador[]> {
       curso: p.curso,
     }));
   } catch (error) {
-    console.error("Erro ao buscar professores:", error);
+    const errorMsg = error instanceof Error ? error.message : JSON.stringify(error);
+    console.error("Erro ao buscar professores:", errorMsg);
     throw error;
   }
 }
@@ -634,7 +645,10 @@ export async function getProjetosPesquisa(): Promise<ProjetoPesquisa[]> {
       .select("*")
       .order("created_at", { ascending: false });
 
-    if (error) throw error;
+    if (error) {
+      const errorMsg = error instanceof Error ? error.message : JSON.stringify(error);
+      throw new Error(`Supabase error: ${errorMsg}`);
+    }
 
     return (data || []).map((p: any) => ({
       id: p.id,
@@ -651,7 +665,8 @@ export async function getProjetosPesquisa(): Promise<ProjetoPesquisa[]> {
       updatedAt: p.updated_at,
     }));
   } catch (error) {
-    console.error("Erro ao buscar projetos de pesquisa:", error);
+    const errorMsg = error instanceof Error ? error.message : JSON.stringify(error);
+    console.error("Erro ao buscar projetos de pesquisa:", errorMsg);
     throw error;
   }
 }
@@ -803,7 +818,10 @@ export async function getProjetosExtensao(): Promise<ProjetoExtensao[]> {
       .select("*")
       .order("created_at", { ascending: false });
 
-    if (error) throw error;
+    if (error) {
+      const errorMsg = error instanceof Error ? error.message : JSON.stringify(error);
+      throw new Error(`Supabase error: ${errorMsg}`);
+    }
 
     return (data || []).map((p: any) => ({
       id: p.id,
@@ -819,7 +837,8 @@ export async function getProjetosExtensao(): Promise<ProjetoExtensao[]> {
       updatedAt: p.updated_at,
     }));
   } catch (error) {
-    console.error("Erro ao buscar projetos de extensão:", error);
+    const errorMsg = error instanceof Error ? error.message : JSON.stringify(error);
+    console.error("Erro ao buscar projetos de extensão:", errorMsg);
     throw error;
   }
 }
