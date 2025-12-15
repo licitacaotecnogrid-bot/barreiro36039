@@ -195,17 +195,17 @@ export async function createEvento(
     const eventoId = newEvento.id;
 
     if (evento.odsAssociadas && evento.odsAssociadas.length > 0) {
-      const odsRecords = evento.odsAssociadas.map((ods) => ({
+      const odsRecords = evento.odsAssociadas.map((ods: any) => ({
         evento_id: eventoId,
-        ods_numero: ods.odsNumero || ods.id,
+        ods_numero: typeof ods === "number" ? ods : (ods.odsNumero || ods.id),
       }));
       await supabase.from("ods_evento").insert(odsRecords);
     }
 
     if (evento.anexos && evento.anexos.length > 0) {
-      const anexoRecords = evento.anexos.map((anexo) => ({
+      const anexoRecords = evento.anexos.map((anexo: any) => ({
         evento_id: eventoId,
-        nome: anexo.nome,
+        nome: typeof anexo === "string" ? anexo : anexo.nome,
       }));
       await supabase.from("anexo_evento").insert(anexoRecords);
     }
