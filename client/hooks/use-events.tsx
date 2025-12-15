@@ -1,40 +1,16 @@
 import React, { createContext, useState, useContext, ReactNode, useEffect } from "react";
+import {
+  getEventos,
+  createEvento as supabaseCreateEvento,
+  updateEvento as supabaseUpdateEvento,
+  deleteEvento as supabaseDeleteEvento,
+  Evento,
+  OdsEvento,
+  AnexoEvento,
+} from "@/lib/supabase-queries";
 import { Status } from "@/data/mock";
-import { getApiUrl } from "@/lib/api";
 
-export interface OdsEvento {
-  id: number;
-  eventoId: number;
-  odsNumero: number;
-  criadoEm: string;
-}
-
-export interface AnexoEvento {
-  id: number;
-  eventoId: number;
-  nome: string;
-  criadoEm: string;
-}
-
-export interface Evento {
-  id: number;
-  titulo: string;
-  data: string;
-  responsavel: string;
-  status: Status;
-  local?: string | null;
-  curso: string;
-  tipoEvento: string;
-  modalidade: string;
-  descricao?: string | null;
-  imagem?: string | null;
-  documento?: string | null;
-  link?: string | null;
-  criadoEm: string;
-  atualizadoEm: string;
-  odsAssociadas: OdsEvento[];
-  anexos: AnexoEvento[];
-}
+export type { OdsEvento, AnexoEvento, Evento };
 
 interface EventsContextType {
   eventos: Evento[];
@@ -57,9 +33,7 @@ export function EventsProvider({ children }: { children: ReactNode }) {
     try {
       setLoading(true);
       setError(null);
-      const response = await fetch(getApiUrl("/eventos"));
-      if (!response.ok) throw new Error("Failed to fetch eventos");
-      const data = await response.json();
+      const data = await getEventos();
       setEventos(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erro ao buscar eventos");
@@ -75,12 +49,7 @@ export function EventsProvider({ children }: { children: ReactNode }) {
 
   const addEvento = async (evento: Omit<Evento, "id" | "criadoEm" | "atualizadoEm">) => {
     try {
-      const response = await fetch(getApiUrl("/eventos"), {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(evento),
-      });
-      if (!response.ok) throw new Error("Failed to create evento");
+      await supabaseCreateEvento(evento);
       await fetchEventos();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erro ao criar evento");
@@ -90,12 +59,7 @@ export function EventsProvider({ children }: { children: ReactNode }) {
 
   const updateEvento = async (id: number, updates: Partial<Evento>) => {
     try {
-      const response = await fetch(getApiUrl(`/eventos/${id}`), {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(updates),
-      });
-      if (!response.ok) throw new Error("Failed to update evento");
+      await supabaseUpdateEvento(id, updates);
       await fetchEventos();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erro ao atualizar evento");
@@ -105,10 +69,7 @@ export function EventsProvider({ children }: { children: ReactNode }) {
 
   const deleteEvento = async (id: number) => {
     try {
-      const response = await fetch(getApiUrl(`/eventos/${id}`), {
-        method: "DELETE",
-      });
-      if (!response.ok) throw new Error("Failed to delete evento");
+      await supabaseDeleteEvento(id);
       await fetchEventos();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erro ao deletar evento");

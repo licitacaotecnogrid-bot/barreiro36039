@@ -1,40 +1,28 @@
 import React, { createContext, useState, useContext, ReactNode, useEffect } from "react";
-import { getApiUrl } from "@/lib/api";
+import {
+  getProjetosPesquisa,
+  createProjetoPesquisa as supabaseCreateProjetoPesquisa,
+  updateProjetoPesquisa as supabaseUpdateProjetoPesquisa,
+  deleteProjetoPesquisa as supabaseDeleteProjetoPesquisa,
+  getProjetosExtensao,
+  createProjetoExtensao as supabaseCreateProjetoExtensao,
+  updateProjetoExtensao as supabaseUpdateProjetoExtensao,
+  deleteProjetoExtensao as supabaseDeleteProjetoExtensao,
+  ProjetoPesquisa,
+  ProjetoExtensao,
+} from "@/lib/supabase-queries";
 
-export interface ProjetoPesquisa {
-  id: number;
-  titulo: string;
-  areaTematica: string;
-  descricao: string;
-  momentoOcorre: string;
-  problemaPesquisa: string;
-  metodologia: string;
-  resultadosEsperados: string;
-  imagem?: string | null;
-  professorCoordenadorId: number;
-}
-
-export interface ProjetoExtensao {
-  id: number;
-  titulo: string;
-  areaTematica: string;
-  descricao: string;
-  momentoOcorre: string;
-  tipoPessoasProcuram: string;
-  comunidadeEnvolvida: string;
-  imagem?: string | null;
-  professorCoordenadorId: number;
-}
+export type { ProjetoPesquisa, ProjetoExtensao };
 
 interface ProjetosContextType {
   projetosPesquisa: ProjetoPesquisa[];
   projetosExtensao: ProjetoExtensao[];
   loading: boolean;
   error: string | null;
-  addProjetoPesquisa: (projeto: Omit<ProjetoPesquisa, "id">) => Promise<void>;
+  addProjetoPesquisa: (projeto: Omit<ProjetoPesquisa, "id" | "createdAt" | "updatedAt">) => Promise<void>;
   updateProjetoPesquisa: (id: number, projeto: Partial<ProjetoPesquisa>) => Promise<void>;
   deleteProjetoPesquisa: (id: number) => Promise<void>;
-  addProjetoExtensao: (projeto: Omit<ProjetoExtensao, "id">) => Promise<void>;
+  addProjetoExtensao: (projeto: Omit<ProjetoExtensao, "id" | "createdAt" | "updatedAt">) => Promise<void>;
   updateProjetoExtensao: (id: number, projeto: Partial<ProjetoExtensao>) => Promise<void>;
   deleteProjetoExtensao: (id: number) => Promise<void>;
   getProjetoPesquisaById: (id: number) => ProjetoPesquisa | undefined;
@@ -56,15 +44,10 @@ export function ProjetosProvider({ children }: { children: ReactNode }) {
     try {
       setLoading(true);
       setError(null);
-      const [pesquisaRes, extensaoRes] = await Promise.all([
-        fetch(getApiUrl("/projetos-pesquisa")),
-        fetch(getApiUrl("/projetos-extensao")),
+      const [pesquisaData, extensaoData] = await Promise.all([
+        getProjetosPesquisa(),
+        getProjetosExtensao(),
       ]);
-
-      if (!pesquisaRes.ok || !extensaoRes.ok) throw new Error("Failed to fetch projetos");
-
-      const pesquisaData = await pesquisaRes.json();
-      const extensaoData = await extensaoRes.json();
 
       setProjetosPesquisa(pesquisaData);
       setProjetosExtensao(extensaoData);
@@ -81,14 +64,9 @@ export function ProjetosProvider({ children }: { children: ReactNode }) {
     fetchProjetos();
   }, []);
 
-  const addProjetoPesquisa = async (projeto: Omit<ProjetoPesquisa, "id">) => {
+  const addProjetoPesquisa = async (projeto: Omit<ProjetoPesquisa, "id" | "createdAt" | "updatedAt">) => {
     try {
-      const response = await fetch(getApiUrl("/projetos-pesquisa"), {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(projeto),
-      });
-      if (!response.ok) throw new Error("Failed to create projeto");
+      await supabaseCreateProjetoPesquisa(projeto);
       await fetchProjetos();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erro ao criar projeto");
@@ -98,12 +76,7 @@ export function ProjetosProvider({ children }: { children: ReactNode }) {
 
   const updateProjetoPesquisa = async (id: number, updates: Partial<ProjetoPesquisa>) => {
     try {
-      const response = await fetch(getApiUrl(`/projetos-pesquisa/${id}`), {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(updates),
-      });
-      if (!response.ok) throw new Error("Failed to update projeto");
+      await supabaseUpdateProjetoPesquisa(id, updates);
       await fetchProjetos();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erro ao atualizar projeto");
@@ -113,10 +86,7 @@ export function ProjetosProvider({ children }: { children: ReactNode }) {
 
   const deleteProjetoPesquisa = async (id: number) => {
     try {
-      const response = await fetch(getApiUrl(`/projetos-pesquisa/${id}`), {
-        method: "DELETE",
-      });
-      if (!response.ok) throw new Error("Failed to delete projeto");
+      await supabaseDeleteProjetoPesquisa(id);
       await fetchProjetos();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erro ao deletar projeto");
@@ -124,14 +94,9 @@ export function ProjetosProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const addProjetoExtensao = async (projeto: Omit<ProjetoExtensao, "id">) => {
+  const addProjetoExtensao = async (projeto: Omit<ProjetoExtensao, "id" | "createdAt" | "updatedAt">) => {
     try {
-      const response = await fetch(getApiUrl("/projetos-extensao"), {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(projeto),
-      });
-      if (!response.ok) throw new Error("Failed to create projeto");
+      await supabaseCreateProjetoExtensao(projeto);
       await fetchProjetos();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erro ao criar projeto");
@@ -141,12 +106,7 @@ export function ProjetosProvider({ children }: { children: ReactNode }) {
 
   const updateProjetoExtensao = async (id: number, updates: Partial<ProjetoExtensao>) => {
     try {
-      const response = await fetch(getApiUrl(`/projetos-extensao/${id}`), {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(updates),
-      });
-      if (!response.ok) throw new Error("Failed to update projeto");
+      await supabaseUpdateProjetoExtensao(id, updates);
       await fetchProjetos();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erro ao atualizar projeto");
@@ -156,10 +116,7 @@ export function ProjetosProvider({ children }: { children: ReactNode }) {
 
   const deleteProjetoExtensao = async (id: number) => {
     try {
-      const response = await fetch(getApiUrl(`/projetos-extensao/${id}`), {
-        method: "DELETE",
-      });
-      if (!response.ok) throw new Error("Failed to delete projeto");
+      await supabaseDeleteProjetoExtensao(id);
       await fetchProjetos();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erro ao deletar projeto");

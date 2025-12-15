@@ -1,20 +1,12 @@
-import React, { createContext, useState, useContext, ReactNode, useEffect } from "react";
-import { getApiUrl } from "@/lib/api";
+import React, { createContext, useState, useContext, ReactNode } from "react";
+import {
+  getComentariosByEvento,
+  createComentario as supabaseCreateComentario,
+  deleteComentario as supabaseDeleteComentario,
+  ComentarioEvento,
+} from "@/lib/supabase-queries";
 
-export interface ComentarioEvento {
-  id: number;
-  eventoId: number;
-  usuarioId: number | null;
-  autor: string;
-  conteudo: string;
-  criadoEm: string;
-  atualizadoEm: string;
-  usuario?: {
-    id: number;
-    nome: string;
-    email: string;
-  };
-}
+export type { ComentarioEvento };
 
 interface ComentariosContextType {
   comentarios: ComentarioEvento[];
@@ -41,20 +33,10 @@ export function ComentariosProvider({ children }: { children: ReactNode }) {
     try {
       setLoading(true);
       setError(null);
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
-
-      const response = await fetch(getApiUrl(`/eventos/${eventoId}/comentarios`), {
-        signal: controller.signal
-      });
-      clearTimeout(timeoutId);
-
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      const data = await response.json();
-      setComentarios(Array.isArray(data) ? data : []);
+      const data = await getComentariosByEvento(eventoId);
+      setComentarios(data || []);
     } catch (err) {
       console.error("Erro ao buscar comentários:", err);
-      // Silently fail - don't show error toast for background fetch
       setComentarios([]);
     } finally {
       setLoading(false);
@@ -67,18 +49,7 @@ export function ComentariosProvider({ children }: { children: ReactNode }) {
     }
 
     try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
-
-      const response = await fetch(getApiUrl(`/eventos/${eventoId}/comentarios`), {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ autor, conteudo, usuarioId }),
-        signal: controller.signal
-      });
-      clearTimeout(timeoutId);
-
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      await supabaseCreateComentario(eventoId, autor, conteudo, usuarioId);
       await fetchComentarios(eventoId);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "Erro ao criar comentário";
@@ -94,16 +65,7 @@ export function ComentariosProvider({ children }: { children: ReactNode }) {
     }
 
     try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
-
-      const response = await fetch(getApiUrl(`/api/eventos/${eventoId}/comentarios/${comentarioId}`), {
-        method: "DELETE",
-        signal: controller.signal
-      });
-      clearTimeout(timeoutId);
-
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      await supabaseDeleteComentario(comentarioId);
       await fetchComentarios(eventoId);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "Erro ao deletar comentário";
