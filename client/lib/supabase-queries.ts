@@ -31,8 +31,8 @@ export interface Evento {
   link?: string | null;
   criadoEm: string;
   atualizadoEm: string;
-  odsAssociadas: OdsEvento[] | number[];
-  anexos: AnexoEvento[] | string[];
+  odsAssociadas?: OdsEvento[] | number[];
+  anexos?: AnexoEvento[] | string[];
 }
 
 export interface ComentarioEvento {
