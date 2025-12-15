@@ -1,5 +1,5 @@
 import React, { createContext, useState, useContext, ReactNode, useEffect } from "react";
-import { getApiUrl } from "@/lib/api";
+import { supabase } from "@/lib/supabase";
 
 export interface ProjetoPesquisa {
   id: number;
