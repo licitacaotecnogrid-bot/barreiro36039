@@ -20,7 +20,7 @@ export interface Evento {
   titulo: string;
   data: string;
   responsavel: string;
-  status: string;
+  status: Status;
   local?: string | null;
   curso: string;
   tipoEvento: string;
