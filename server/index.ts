@@ -69,9 +69,9 @@ export function createServer() {
   // Coordenadores endpoints (for project coordinators)
   app.get("/api/professores", (_req, res) => {
     try {
-      // Get coordinators from Usuario table with "Coordenador" cargo
-      const coordenadores = usuarioQueries.getAll.all() as any[];
-      const filtered = coordenadores.filter((u) => u.cargo === "Coordenador");
+      // Get coordinators from Usuario table with "Coordenador" or "Professor" cargo
+      const usuarios = usuarioQueries.getAll.all() as any[];
+      const filtered = usuarios.filter((u) => u.cargo === "Coordenador" || u.cargo === "Professor");
       res.json(filtered);
     } catch (error) {
       console.error("Erro ao buscar coordenadores:", error);
