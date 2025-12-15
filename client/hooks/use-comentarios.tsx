@@ -41,20 +41,16 @@ export function ComentariosProvider({ children }: { children: ReactNode }) {
     try {
       setLoading(true);
       setError(null);
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+      const { data, error: supabaseError } = await supabase
+        .from("ComentarioEvento")
+        .select("*, usuario:Usuario(id, nome, email)")
+        .eq("eventoId", eventoId)
+        .order("criadoEm", { ascending: false });
 
-      const response = await fetch(getApiUrl(`/eventos/${eventoId}/comentarios`), {
-        signal: controller.signal
-      });
-      clearTimeout(timeoutId);
-
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      const data = await response.json();
+      if (supabaseError) throw supabaseError;
       setComentarios(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error("Erro ao buscar comentários:", err);
-      // Silently fail - don't show error toast for background fetch
       setComentarios([]);
     } finally {
       setLoading(false);
@@ -67,18 +63,11 @@ export function ComentariosProvider({ children }: { children: ReactNode }) {
     }
 
     try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+      const { error: supabaseError } = await supabase
+        .from("ComentarioEvento")
+        .insert([{ eventoId, autor, conteudo, usuarioId }]);
 
-      const response = await fetch(getApiUrl(`/eventos/${eventoId}/comentarios`), {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ autor, conteudo, usuarioId }),
-        signal: controller.signal
-      });
-      clearTimeout(timeoutId);
-
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      if (supabaseError) throw supabaseError;
       await fetchComentarios(eventoId);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "Erro ao criar comentário";
@@ -94,16 +83,12 @@ export function ComentariosProvider({ children }: { children: ReactNode }) {
     }
 
     try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+      const { error: supabaseError } = await supabase
+        .from("ComentarioEvento")
+        .delete()
+        .eq("id", comentarioId);
 
-      const response = await fetch(getApiUrl(`/api/eventos/${eventoId}/comentarios/${comentarioId}`), {
-        method: "DELETE",
-        signal: controller.signal
-      });
-      clearTimeout(timeoutId);
-
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      if (supabaseError) throw supabaseError;
       await fetchComentarios(eventoId);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "Erro ao deletar comentário";
