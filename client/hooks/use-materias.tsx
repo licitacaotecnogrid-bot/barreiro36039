@@ -1,6 +1,6 @@
 import React, { createContext, useState, useContext, ReactNode, useEffect } from "react";
 import type { Materia } from "@/data/mock";
-import { getApiUrl } from "@/lib/api";
+import { supabase } from "@/lib/supabase";
 
 interface MateriasContextType {
   materias: Materia[];
