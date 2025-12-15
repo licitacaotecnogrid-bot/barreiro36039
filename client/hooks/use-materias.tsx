@@ -1,4 +1,10 @@
-import React, { createContext, useState, useContext, ReactNode, useEffect } from "react";
+import React, {
+  createContext,
+  useState,
+  useContext,
+  ReactNode,
+  useEffect,
+} from "react";
 import type { Materia } from "@/data/mock";
 import { supabase } from "@/lib/supabase";
 
@@ -13,7 +19,9 @@ interface MateriasContextType {
   refetchMaterias: () => Promise<void>;
 }
 
-const MateriasContext = createContext<MateriasContextType | undefined>(undefined);
+const MateriasContext = createContext<MateriasContextType | undefined>(
+  undefined,
+);
 
 export function MateriasProvider({ children }: { children: ReactNode }) {
   const [materias, setMaterias] = useState<Materia[]>([]);
@@ -65,7 +73,9 @@ export function MateriasProvider({ children }: { children: ReactNode }) {
       if (supabaseError) throw supabaseError;
       await fetchMaterias();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erro ao atualizar matéria");
+      setError(
+        err instanceof Error ? err.message : "Erro ao atualizar matéria",
+      );
       throw err;
     }
   };

@@ -1,4 +1,10 @@
-import React, { createContext, useState, useContext, ReactNode, useEffect } from "react";
+import React, {
+  createContext,
+  useState,
+  useContext,
+  ReactNode,
+  useEffect,
+} from "react";
 import { supabase } from "@/lib/supabase";
 
 export interface ProjetoPesquisa {
@@ -32,10 +38,16 @@ interface ProjetosContextType {
   loading: boolean;
   error: string | null;
   addProjetoPesquisa: (projeto: Omit<ProjetoPesquisa, "id">) => Promise<void>;
-  updateProjetoPesquisa: (id: number, projeto: Partial<ProjetoPesquisa>) => Promise<void>;
+  updateProjetoPesquisa: (
+    id: number,
+    projeto: Partial<ProjetoPesquisa>,
+  ) => Promise<void>;
   deleteProjetoPesquisa: (id: number) => Promise<void>;
   addProjetoExtensao: (projeto: Omit<ProjetoExtensao, "id">) => Promise<void>;
-  updateProjetoExtensao: (id: number, projeto: Partial<ProjetoExtensao>) => Promise<void>;
+  updateProjetoExtensao: (
+    id: number,
+    projeto: Partial<ProjetoExtensao>,
+  ) => Promise<void>;
   deleteProjetoExtensao: (id: number) => Promise<void>;
   getProjetoPesquisaById: (id: number) => ProjetoPesquisa | undefined;
   getProjetoExtensaoById: (id: number) => ProjetoExtensao | undefined;
@@ -44,11 +56,17 @@ interface ProjetosContextType {
   refetchProjetos: () => Promise<void>;
 }
 
-const ProjetosContext = createContext<ProjetosContextType | undefined>(undefined);
+const ProjetosContext = createContext<ProjetosContextType | undefined>(
+  undefined,
+);
 
 export function ProjetosProvider({ children }: { children: ReactNode }) {
-  const [projetosPesquisa, setProjetosPesquisa] = useState<ProjetoPesquisa[]>([]);
-  const [projetosExtensao, setProjetosExtensao] = useState<ProjetoExtensao[]>([]);
+  const [projetosPesquisa, setProjetosPesquisa] = useState<ProjetoPesquisa[]>(
+    [],
+  );
+  const [projetosExtensao, setProjetosExtensao] = useState<ProjetoExtensao[]>(
+    [],
+  );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -57,11 +75,18 @@ export function ProjetosProvider({ children }: { children: ReactNode }) {
       setLoading(true);
       setError(null);
       const [pesquisaData, extensaoData] = await Promise.all([
-        supabase.from("ProjetoPesquisa").select("*").order("createdAt", { ascending: false }),
-        supabase.from("ProjetoExtensao").select("*").order("createdAt", { ascending: false }),
+        supabase
+          .from("ProjetoPesquisa")
+          .select("*")
+          .order("createdAt", { ascending: false }),
+        supabase
+          .from("ProjetoExtensao")
+          .select("*")
+          .order("createdAt", { ascending: false }),
       ]);
 
-      if (pesquisaData.error || extensaoData.error) throw pesquisaData.error || extensaoData.error;
+      if (pesquisaData.error || extensaoData.error)
+        throw pesquisaData.error || extensaoData.error;
 
       setProjetosPesquisa(pesquisaData.data || []);
       setProjetosExtensao(extensaoData.data || []);
@@ -91,7 +116,10 @@ export function ProjetosProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const updateProjetoPesquisa = async (id: number, updates: Partial<ProjetoPesquisa>) => {
+  const updateProjetoPesquisa = async (
+    id: number,
+    updates: Partial<ProjetoPesquisa>,
+  ) => {
     try {
       const { error: supabaseError } = await supabase
         .from("ProjetoPesquisa")
@@ -100,7 +128,9 @@ export function ProjetosProvider({ children }: { children: ReactNode }) {
       if (supabaseError) throw supabaseError;
       await fetchProjetos();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erro ao atualizar projeto");
+      setError(
+        err instanceof Error ? err.message : "Erro ao atualizar projeto",
+      );
       throw err;
     }
   };
@@ -132,7 +162,10 @@ export function ProjetosProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const updateProjetoExtensao = async (id: number, updates: Partial<ProjetoExtensao>) => {
+  const updateProjetoExtensao = async (
+    id: number,
+    updates: Partial<ProjetoExtensao>,
+  ) => {
     try {
       const { error: supabaseError } = await supabase
         .from("ProjetoExtensao")
@@ -141,7 +174,9 @@ export function ProjetosProvider({ children }: { children: ReactNode }) {
       if (supabaseError) throw supabaseError;
       await fetchProjetos();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erro ao atualizar projeto");
+      setError(
+        err instanceof Error ? err.message : "Erro ao atualizar projeto",
+      );
       throw err;
     }
   };
@@ -169,11 +204,15 @@ export function ProjetosProvider({ children }: { children: ReactNode }) {
   };
 
   const getProjetosPesquisaByProfessor = (professorId: number) => {
-    return projetosPesquisa.filter((p) => p.professorCoordenadorId === professorId);
+    return projetosPesquisa.filter(
+      (p) => p.professorCoordenadorId === professorId,
+    );
   };
 
   const getProjetosExtensaoByProfessor = (professorId: number) => {
-    return projetosExtensao.filter((p) => p.professorCoordenadorId === professorId);
+    return projetosExtensao.filter(
+      (p) => p.professorCoordenadorId === professorId,
+    );
   };
 
   return (

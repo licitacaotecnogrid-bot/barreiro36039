@@ -1,4 +1,10 @@
-import React, { createContext, useState, useContext, ReactNode, useEffect } from "react";
+import React, {
+  createContext,
+  useState,
+  useContext,
+  ReactNode,
+  useEffect,
+} from "react";
 import type { ProfessorCoordenador } from "@/data/mock";
 import { supabase } from "@/lib/supabase";
 
@@ -7,13 +13,18 @@ interface ProfessoresContextType {
   loading: boolean;
   error: string | null;
   addProfessor: (professor: Omit<ProfessorCoordenador, "id">) => Promise<void>;
-  updateProfessor: (id: number, professor: Partial<ProfessorCoordenador>) => Promise<void>;
+  updateProfessor: (
+    id: number,
+    professor: Partial<ProfessorCoordenador>,
+  ) => Promise<void>;
   deleteProfessor: (id: number) => Promise<void>;
   getProfessorById: (id: number) => ProfessorCoordenador | undefined;
   refetchProfessores: () => Promise<void>;
 }
 
-const ProfessoresContext = createContext<ProfessoresContextType | undefined>(undefined);
+const ProfessoresContext = createContext<ProfessoresContextType | undefined>(
+  undefined,
+);
 
 export function ProfessoresProvider({ children }: { children: ReactNode }) {
   const [professores, setProfessores] = useState<ProfessorCoordenador[]>([]);
@@ -41,7 +52,9 @@ export function ProfessoresProvider({ children }: { children: ReactNode }) {
 
       setProfessores(professorData);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erro ao buscar professores");
+      setError(
+        err instanceof Error ? err.message : "Erro ao buscar professores",
+      );
       setProfessores([]);
     } finally {
       setLoading(false);
@@ -75,7 +88,10 @@ export function ProfessoresProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const updateProfessor = async (id: number, updates: Partial<ProfessorCoordenador>) => {
+  const updateProfessor = async (
+    id: number,
+    updates: Partial<ProfessorCoordenador>,
+  ) => {
     try {
       const { error: supabaseError } = await supabase
         .from("Usuario")
@@ -89,7 +105,9 @@ export function ProfessoresProvider({ children }: { children: ReactNode }) {
       if (supabaseError) throw supabaseError;
       await fetchProfessores();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erro ao atualizar professor");
+      setError(
+        err instanceof Error ? err.message : "Erro ao atualizar professor",
+      );
       throw err;
     }
   };
@@ -104,7 +122,9 @@ export function ProfessoresProvider({ children }: { children: ReactNode }) {
       if (supabaseError) throw supabaseError;
       await fetchProfessores();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erro ao deletar professor");
+      setError(
+        err instanceof Error ? err.message : "Erro ao deletar professor",
+      );
       throw err;
     }
   };
@@ -114,7 +134,18 @@ export function ProfessoresProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <ProfessoresContext.Provider value={{ professores, loading, error, addProfessor, updateProfessor, deleteProfessor, getProfessorById, refetchProfessores: fetchProfessores }}>
+    <ProfessoresContext.Provider
+      value={{
+        professores,
+        loading,
+        error,
+        addProfessor,
+        updateProfessor,
+        deleteProfessor,
+        getProfessorById,
+        refetchProfessores: fetchProfessores,
+      }}
+    >
       {children}
     </ProfessoresContext.Provider>
   );

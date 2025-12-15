@@ -1,4 +1,10 @@
-import React, { createContext, useState, useContext, ReactNode, useEffect } from "react";
+import React, {
+  createContext,
+  useState,
+  useContext,
+  ReactNode,
+  useEffect,
+} from "react";
 import { supabase } from "@/lib/supabase";
 
 export interface ComentarioEvento {
@@ -20,12 +26,19 @@ interface ComentariosContextType {
   comentarios: ComentarioEvento[];
   loading: boolean;
   error: string | null;
-  addComentario: (eventoId: number, autor: string, conteudo: string, usuarioId?: number) => Promise<void>;
+  addComentario: (
+    eventoId: number,
+    autor: string,
+    conteudo: string,
+    usuarioId?: number,
+  ) => Promise<void>;
   deleteComentario: (eventoId: number, comentarioId: number) => Promise<void>;
   refetchComentarios: (eventoId: number) => Promise<void>;
 }
 
-const ComentariosContext = createContext<ComentariosContextType | undefined>(undefined);
+const ComentariosContext = createContext<ComentariosContextType | undefined>(
+  undefined,
+);
 
 export function ComentariosProvider({ children }: { children: ReactNode }) {
   const [comentarios, setComentarios] = useState<ComentarioEvento[]>([]);
@@ -57,7 +70,12 @@ export function ComentariosProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const addComentario = async (eventoId: number, autor: string, conteudo: string, usuarioId?: number) => {
+  const addComentario = async (
+    eventoId: number,
+    autor: string,
+    conteudo: string,
+    usuarioId?: number,
+  ) => {
     if (!eventoId || eventoId <= 0) {
       throw new Error("ID do evento inválido");
     }
@@ -70,7 +88,8 @@ export function ComentariosProvider({ children }: { children: ReactNode }) {
       if (supabaseError) throw supabaseError;
       await fetchComentarios(eventoId);
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Erro ao criar comentário";
+      const errorMessage =
+        err instanceof Error ? err.message : "Erro ao criar comentário";
       console.error("Erro ao criar comentário:", err);
       setError(errorMessage);
       throw err;
@@ -91,7 +110,8 @@ export function ComentariosProvider({ children }: { children: ReactNode }) {
       if (supabaseError) throw supabaseError;
       await fetchComentarios(eventoId);
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Erro ao deletar comentário";
+      const errorMessage =
+        err instanceof Error ? err.message : "Erro ao deletar comentário";
       console.error("Erro ao deletar comentário:", err);
       setError(errorMessage);
       throw err;
@@ -99,7 +119,16 @@ export function ComentariosProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <ComentariosContext.Provider value={{ comentarios, loading, error, addComentario, deleteComentario, refetchComentarios: fetchComentarios }}>
+    <ComentariosContext.Provider
+      value={{
+        comentarios,
+        loading,
+        error,
+        addComentario,
+        deleteComentario,
+        refetchComentarios: fetchComentarios,
+      }}
+    >
       {children}
     </ComentariosContext.Provider>
   );

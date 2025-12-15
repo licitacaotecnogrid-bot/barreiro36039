@@ -1,4 +1,10 @@
-import React, { createContext, useState, useContext, ReactNode, useEffect } from "react";
+import React, {
+  createContext,
+  useState,
+  useContext,
+  ReactNode,
+  useEffect,
+} from "react";
 import { Status } from "@/data/mock";
 import { supabase } from "@/lib/supabase";
 
@@ -40,7 +46,9 @@ interface EventsContextType {
   eventos: Evento[];
   loading: boolean;
   error: string | null;
-  addEvento: (evento: Omit<Evento, "id" | "criadoEm" | "atualizadoEm">) => Promise<void>;
+  addEvento: (
+    evento: Omit<Evento, "id" | "criadoEm" | "atualizadoEm">,
+  ) => Promise<void>;
   updateEvento: (id: number, evento: Partial<Evento>) => Promise<void>;
   deleteEvento: (id: number) => Promise<void>;
   refetchEventos: () => Promise<void>;
@@ -76,7 +84,9 @@ export function EventsProvider({ children }: { children: ReactNode }) {
     fetchEventos();
   }, []);
 
-  const addEvento = async (evento: Omit<Evento, "id" | "criadoEm" | "atualizadoEm">) => {
+  const addEvento = async (
+    evento: Omit<Evento, "id" | "criadoEm" | "atualizadoEm">,
+  ) => {
     try {
       const { odsAssociadas, anexos, ...eventoData } = evento;
 
@@ -162,7 +172,17 @@ export function EventsProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <EventsContext.Provider value={{ eventos, loading, error, addEvento, updateEvento, deleteEvento, refetchEventos: fetchEventos }}>
+    <EventsContext.Provider
+      value={{
+        eventos,
+        loading,
+        error,
+        addEvento,
+        updateEvento,
+        deleteEvento,
+        refetchEventos: fetchEventos,
+      }}
+    >
       {children}
     </EventsContext.Provider>
   );
