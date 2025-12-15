@@ -24,10 +24,13 @@ export function MateriasProvider({ children }: { children: ReactNode }) {
     try {
       setLoading(true);
       setError(null);
-      const response = await fetch(getApiUrl("/materias"));
-      if (!response.ok) throw new Error("Failed to fetch materias");
-      const data = await response.json();
-      setMaterias(data);
+      const { data, error: supabaseError } = await supabase
+        .from("Materia")
+        .select("*")
+        .order("nome", { ascending: true });
+
+      if (supabaseError) throw supabaseError;
+      setMaterias(data || []);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erro ao buscar matérias");
       setMaterias([]);
@@ -42,12 +45,10 @@ export function MateriasProvider({ children }: { children: ReactNode }) {
 
   const addMateria = async (materia: Omit<Materia, "id">) => {
     try {
-      const response = await fetch(getApiUrl("/materias"), {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(materia),
-      });
-      if (!response.ok) throw new Error("Failed to create materia");
+      const { error: supabaseError } = await supabase
+        .from("Materia")
+        .insert([materia]);
+      if (supabaseError) throw supabaseError;
       await fetchMaterias();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erro ao criar matéria");
@@ -57,12 +58,11 @@ export function MateriasProvider({ children }: { children: ReactNode }) {
 
   const updateMateria = async (id: number, updates: Partial<Materia>) => {
     try {
-      const response = await fetch(getApiUrl(`/materias/${id}`), {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(updates),
-      });
-      if (!response.ok) throw new Error("Failed to update materia");
+      const { error: supabaseError } = await supabase
+        .from("Materia")
+        .update(updates)
+        .eq("id", id);
+      if (supabaseError) throw supabaseError;
       await fetchMaterias();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erro ao atualizar matéria");
@@ -72,10 +72,11 @@ export function MateriasProvider({ children }: { children: ReactNode }) {
 
   const deleteMateria = async (id: number) => {
     try {
-      const response = await fetch(getApiUrl(`/materias/${id}`), {
-        method: "DELETE",
-      });
-      if (!response.ok) throw new Error("Failed to delete materia");
+      const { error: supabaseError } = await supabase
+        .from("Materia")
+        .delete()
+        .eq("id", id);
+      if (supabaseError) throw supabaseError;
       await fetchMaterias();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erro ao deletar matéria");
