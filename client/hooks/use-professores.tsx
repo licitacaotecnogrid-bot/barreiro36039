@@ -37,7 +37,7 @@ export function ProfessoresProvider({ children }: { children: ReactNode }) {
       setError(null);
       const { data, error: supabaseError } = await supabase
         .from("Usuario")
-        .select("id, nome, email, senha, cargo")
+        .select("id, nome, email, senha")
         .or("cargo.eq.Professor,cargo.eq.Coordenador");
 
       if (supabaseError) throw supabaseError;
