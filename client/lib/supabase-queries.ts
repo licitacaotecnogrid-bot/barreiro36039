@@ -30,8 +30,8 @@ export interface Evento {
   link?: string | null;
   criadoEm: string;
   atualizadoEm: string;
-  odsAssociadas: OdsEvento[];
-  anexos: AnexoEvento[];
+  odsAssociadas: OdsEvento[] | number[];
+  anexos: AnexoEvento[] | string[];
 }
 
 export interface ComentarioEvento {
