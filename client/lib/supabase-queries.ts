@@ -105,7 +105,7 @@ export interface ProjetoExtensao {
 export async function getEventos(): Promise<Evento[]> {
   try {
     const { data: eventos, error } = await supabase
-      .from("evento")
+      .from("Evento")
       .select("*")
       .order("data", { ascending: false });
 
@@ -118,19 +118,29 @@ export async function getEventos(): Promise<Evento[]> {
       (eventos || []).map(async (evento) => {
         const [odsData, anexosData] = await Promise.all([
           supabase
-            .from("ods_evento")
+            .from("OdsEvento")
             .select("*")
-            .eq("evento_id", evento.id),
+            .eq("eventoId", evento.id),
           supabase
-            .from("anexo_evento")
+            .from("AnexoEvento")
             .select("*")
-            .eq("evento_id", evento.id),
+            .eq("eventoId", evento.id),
         ]);
 
         return {
           ...evento,
-          odsAssociadas: odsData.data || [],
-          anexos: anexosData.data || [],
+          odsAssociadas: (odsData.data || []).map((ods: any) => ({
+            id: ods.id,
+            eventoId: ods.eventoId,
+            odsNumero: ods.odsNumero,
+            criadoEm: ods.criadoEm,
+          })),
+          anexos: (anexosData.data || []).map((anexo: any) => ({
+            id: anexo.id,
+            eventoId: anexo.eventoId,
+            nome: anexo.nome,
+            criadoEm: anexo.criadoEm,
+          })),
         };
       })
     );
@@ -146,7 +156,7 @@ export async function getEventos(): Promise<Evento[]> {
 export async function getEventoById(id: number): Promise<Evento> {
   try {
     const { data: evento, error: eventoError } = await supabase
-      .from("evento")
+      .from("Evento")
       .select("*")
       .eq("id", id)
       .single();
@@ -154,14 +164,24 @@ export async function getEventoById(id: number): Promise<Evento> {
     if (eventoError) throw eventoError;
 
     const [odsData, anexosData] = await Promise.all([
-      supabase.from("ods_evento").select("*").eq("evento_id", id),
-      supabase.from("anexo_evento").select("*").eq("evento_id", id),
+      supabase.from("OdsEvento").select("*").eq("eventoId", id),
+      supabase.from("AnexoEvento").select("*").eq("eventoId", id),
     ]);
 
     return {
       ...evento,
-      odsAssociadas: odsData.data || [],
-      anexos: anexosData.data || [],
+      odsAssociadas: (odsData.data || []).map((ods: any) => ({
+        id: ods.id,
+        eventoId: ods.eventoId,
+        odsNumero: ods.odsNumero,
+        criadoEm: ods.criadoEm,
+      })),
+      anexos: (anexosData.data || []).map((anexo: any) => ({
+        id: anexo.id,
+        eventoId: anexo.eventoId,
+        nome: anexo.nome,
+        criadoEm: anexo.criadoEm,
+      })),
     };
   } catch (error) {
     console.error("Erro ao buscar evento:", error);
@@ -174,7 +194,7 @@ export async function createEvento(
 ): Promise<Evento> {
   try {
     const { data: newEvento, error: eventoError } = await supabase
-      .from("evento")
+      .from("Evento")
       .insert([
         {
           titulo: evento.titulo,
@@ -183,7 +203,7 @@ export async function createEvento(
           status: evento.status,
           local: evento.local,
           curso: evento.curso,
-          tipo_evento: evento.tipoEvento,
+          tipoEvento: evento.tipoEvento,
           modalidade: evento.modalidade,
           descricao: evento.descricao,
           imagem: evento.imagem,
@@ -203,18 +223,18 @@ export async function createEvento(
 
     if (evento.odsAssociadas && evento.odsAssociadas.length > 0) {
       const odsRecords = evento.odsAssociadas.map((ods: any) => ({
-        evento_id: eventoId,
-        ods_numero: typeof ods === "number" ? ods : (ods.odsNumero || ods.id),
+        eventoId: eventoId,
+        odsNumero: typeof ods === "number" ? ods : (ods.odsNumero || ods.id),
       }));
-      await supabase.from("ods_evento").insert(odsRecords);
+      await supabase.from("OdsEvento").insert(odsRecords);
     }
 
     if (evento.anexos && evento.anexos.length > 0) {
       const anexoRecords = evento.anexos.map((anexo: any) => ({
-        evento_id: eventoId,
+        eventoId: eventoId,
         nome: typeof anexo === "string" ? anexo : anexo.nome,
       }));
-      await supabase.from("anexo_evento").insert(anexoRecords);
+      await supabase.from("AnexoEvento").insert(anexoRecords);
     }
 
     return getEventoById(eventoId);
@@ -236,7 +256,7 @@ export async function updateEvento(
     if (updates.status !== undefined) updateData.status = updates.status;
     if (updates.local !== undefined) updateData.local = updates.local;
     if (updates.curso) updateData.curso = updates.curso;
-    if (updates.tipoEvento) updateData.tipo_evento = updates.tipoEvento;
+    if (updates.tipoEvento) updateData.tipoEvento = updates.tipoEvento;
     if (updates.modalidade) updateData.modalidade = updates.modalidade;
     if (updates.descricao !== undefined) updateData.descricao = updates.descricao;
     if (updates.imagem) updateData.imagem = updates.imagem;
@@ -244,31 +264,31 @@ export async function updateEvento(
     if (updates.link !== undefined) updateData.link = updates.link;
 
     const { error: updateError } = await supabase
-      .from("evento")
+      .from("Evento")
       .update(updateData)
       .eq("id", id);
 
     if (updateError) throw updateError;
 
     if (updates.odsAssociadas) {
-      await supabase.from("ods_evento").delete().eq("evento_id", id);
+      await supabase.from("OdsEvento").delete().eq("eventoId", id);
       const odsRecords = updates.odsAssociadas.map((ods: any) => ({
-        evento_id: id,
-        ods_numero: typeof ods === "number" ? ods : (ods.odsNumero || ods.id),
+        eventoId: id,
+        odsNumero: typeof ods === "number" ? ods : (ods.odsNumero || ods.id),
       }));
       if (odsRecords.length > 0) {
-        await supabase.from("ods_evento").insert(odsRecords);
+        await supabase.from("OdsEvento").insert(odsRecords);
       }
     }
 
     if (updates.anexos) {
-      await supabase.from("anexo_evento").delete().eq("evento_id", id);
+      await supabase.from("AnexoEvento").delete().eq("eventoId", id);
       const anexoRecords = updates.anexos.map((anexo: any) => ({
-        evento_id: id,
+        eventoId: id,
         nome: typeof anexo === "string" ? anexo : anexo.nome,
       }));
       if (anexoRecords.length > 0) {
-        await supabase.from("anexo_evento").insert(anexoRecords);
+        await supabase.from("AnexoEvento").insert(anexoRecords);
       }
     }
 
@@ -281,9 +301,9 @@ export async function updateEvento(
 
 export async function deleteEvento(id: number): Promise<void> {
   try {
-    await supabase.from("ods_evento").delete().eq("evento_id", id);
-    await supabase.from("anexo_evento").delete().eq("evento_id", id);
-    const { error } = await supabase.from("evento").delete().eq("id", id);
+    await supabase.from("OdsEvento").delete().eq("eventoId", id);
+    await supabase.from("AnexoEvento").delete().eq("eventoId", id);
+    const { error } = await supabase.from("Evento").delete().eq("id", id);
 
     if (error) throw error;
   } catch (error) {
@@ -301,26 +321,26 @@ export async function getComentariosByEvento(
 ): Promise<ComentarioEvento[]> {
   try {
     const { data: comentarios, error } = await supabase
-      .from("comentario_evento")
+      .from("ComentarioEvento")
       .select(
         `
         *,
-        usuario:usuario_id(id, nome, email)
+        usuario:usuarioId(id, nome, email)
       `
       )
-      .eq("evento_id", eventoId)
-      .order("criado_em", { ascending: false });
+      .eq("eventoId", eventoId)
+      .order("criadoEm", { ascending: false });
 
     if (error) throw error;
 
     return (comentarios || []).map((c: any) => ({
       id: c.id,
-      eventoId: c.evento_id,
-      usuarioId: c.usuario_id,
+      eventoId: c.eventoId,
+      usuarioId: c.usuarioId,
       autor: c.autor,
       conteudo: c.conteudo,
-      criadoEm: c.criado_em,
-      atualizadoEm: c.atualizado_em,
+      criadoEm: c.criadoEm,
+      atualizadoEm: c.atualizadoEm,
       usuario: c.usuario ? c.usuario : null,
     }));
   } catch (error) {
@@ -337,11 +357,11 @@ export async function createComentario(
 ): Promise<ComentarioEvento> {
   try {
     const { data: newComentario, error } = await supabase
-      .from("comentario_evento")
+      .from("ComentarioEvento")
       .insert([
         {
-          evento_id: eventoId,
-          usuario_id: usuarioId || null,
+          eventoId: eventoId,
+          usuarioId: usuarioId || null,
           autor,
           conteudo,
         },
@@ -353,12 +373,12 @@ export async function createComentario(
 
     return {
       id: newComentario.id,
-      eventoId: newComentario.evento_id,
-      usuarioId: newComentario.usuario_id,
+      eventoId: newComentario.eventoId,
+      usuarioId: newComentario.usuarioId,
       autor: newComentario.autor,
       conteudo: newComentario.conteudo,
-      criadoEm: newComentario.criado_em,
-      atualizadoEm: newComentario.atualizado_em,
+      criadoEm: newComentario.criadoEm,
+      atualizadoEm: newComentario.atualizadoEm,
     };
   } catch (error) {
     console.error("Erro ao criar comentário:", error);
@@ -372,7 +392,7 @@ export async function updateComentario(
 ): Promise<ComentarioEvento> {
   try {
     const { data: updated, error } = await supabase
-      .from("comentario_evento")
+      .from("ComentarioEvento")
       .update({ conteudo })
       .eq("id", comentarioId)
       .select()
@@ -382,12 +402,12 @@ export async function updateComentario(
 
     return {
       id: updated.id,
-      eventoId: updated.evento_id,
-      usuarioId: updated.usuario_id,
+      eventoId: updated.eventoId,
+      usuarioId: updated.usuarioId,
       autor: updated.autor,
       conteudo: updated.conteudo,
-      criadoEm: updated.criado_em,
-      atualizadoEm: updated.atualizado_em,
+      criadoEm: updated.criadoEm,
+      atualizadoEm: updated.atualizadoEm,
     };
   } catch (error) {
     console.error("Erro ao atualizar comentário:", error);
@@ -398,7 +418,7 @@ export async function updateComentario(
 export async function deleteComentario(comentarioId: number): Promise<void> {
   try {
     const { error } = await supabase
-      .from("comentario_evento")
+      .from("ComentarioEvento")
       .delete()
       .eq("id", comentarioId);
 
@@ -416,7 +436,7 @@ export async function deleteComentario(comentarioId: number): Promise<void> {
 export async function getMaterias(): Promise<Materia[]> {
   try {
     const { data, error } = await supabase
-      .from("materia")
+      .from("Materia")
       .select("*")
       .order("nome", { ascending: true });
 
@@ -436,7 +456,7 @@ export async function getMaterias(): Promise<Materia[]> {
 export async function getMateriaById(id: number): Promise<Materia> {
   try {
     const { data, error } = await supabase
-      .from("materia")
+      .from("Materia")
       .select("*")
       .eq("id", id)
       .single();
@@ -455,7 +475,7 @@ export async function createMateria(
 ): Promise<Materia> {
   try {
     const { data, error } = await supabase
-      .from("materia")
+      .from("Materia")
       .insert([{ nome: materia.nome, descricao: materia.descricao }])
       .select()
       .single();
@@ -475,7 +495,7 @@ export async function updateMateria(
 ): Promise<Materia> {
   try {
     const { data, error } = await supabase
-      .from("materia")
+      .from("Materia")
       .update(updates)
       .eq("id", id)
       .select()
@@ -492,7 +512,7 @@ export async function updateMateria(
 
 export async function deleteMateria(id: number): Promise<void> {
   try {
-    const { error } = await supabase.from("materia").delete().eq("id", id);
+    const { error } = await supabase.from("Materia").delete().eq("id", id);
 
     if (error) throw error;
   } catch (error) {
@@ -508,7 +528,7 @@ export async function deleteMateria(id: number): Promise<void> {
 export async function getProfessores(): Promise<ProfessorCoordenador[]> {
   try {
     const { data, error } = await supabase
-      .from("usuario")
+      .from("Usuario")
       .select("id, nome, email, cargo, curso")
       .eq("cargo", "Coordenador")
       .order("nome", { ascending: true });
@@ -537,7 +557,7 @@ export async function getProfessorById(
 ): Promise<ProfessorCoordenador> {
   try {
     const { data, error } = await supabase
-      .from("usuario")
+      .from("Usuario")
       .select("id, nome, email, cargo, curso")
       .eq("id", id)
       .single();
@@ -562,7 +582,7 @@ export async function createProfessor(
 ): Promise<ProfessorCoordenador> {
   try {
     const { data, error } = await supabase
-      .from("usuario")
+      .from("Usuario")
       .insert([
         {
           nome: professor.nome,
@@ -602,7 +622,7 @@ export async function updateProfessor(
     if (updates.curso) updateData.curso = updates.curso;
 
     const { data, error } = await supabase
-      .from("usuario")
+      .from("Usuario")
       .update(updateData)
       .eq("id", id)
       .select()
@@ -625,7 +645,7 @@ export async function updateProfessor(
 
 export async function deleteProfessor(id: number): Promise<void> {
   try {
-    const { error } = await supabase.from("usuario").delete().eq("id", id);
+    const { error } = await supabase.from("Usuario").delete().eq("id", id);
 
     if (error) throw error;
   } catch (error) {
@@ -641,9 +661,9 @@ export async function deleteProfessor(id: number): Promise<void> {
 export async function getProjetosPesquisa(): Promise<ProjetoPesquisa[]> {
   try {
     const { data, error } = await supabase
-      .from("projeto_pesquisa")
+      .from("ProjetoPesquisa")
       .select("*")
-      .order("created_at", { ascending: false });
+      .order("createdAt", { ascending: false });
 
     if (error) {
       const errorMsg = error instanceof Error ? error.message : JSON.stringify(error);
@@ -653,16 +673,16 @@ export async function getProjetosPesquisa(): Promise<ProjetoPesquisa[]> {
     return (data || []).map((p: any) => ({
       id: p.id,
       titulo: p.titulo,
-      areaTematica: p.area_tematica,
+      areaTematica: p.areaTematica,
       descricao: p.descricao,
-      momentoOcorre: p.momento_ocorre,
-      problemaPesquisa: p.problema_pesquisa,
+      momentoOcorre: p.momentoOcorre,
+      problemaPesquisa: p.problemaPesquisa,
       metodologia: p.metodologia,
-      resultadosEsperados: p.resultados_esperados,
+      resultadosEsperados: p.resultadosEsperados,
       imagem: p.imagem,
-      professorCoordenadorId: p.professor_coordenador_id,
-      createdAt: p.created_at,
-      updatedAt: p.updated_at,
+      professorCoordenadorId: p.professorCoordenadorId,
+      createdAt: p.createdAt,
+      updatedAt: p.updatedAt,
     }));
   } catch (error) {
     const errorMsg = error instanceof Error ? error.message : JSON.stringify(error);
@@ -676,7 +696,7 @@ export async function getProjetoPesquisaById(
 ): Promise<ProjetoPesquisa> {
   try {
     const { data, error } = await supabase
-      .from("projeto_pesquisa")
+      .from("ProjetoPesquisa")
       .select("*")
       .eq("id", id)
       .single();
@@ -686,16 +706,16 @@ export async function getProjetoPesquisaById(
     return {
       id: data.id,
       titulo: data.titulo,
-      areaTematica: data.area_tematica,
+      areaTematica: data.areaTematica,
       descricao: data.descricao,
-      momentoOcorre: data.momento_ocorre,
-      problemaPesquisa: data.problema_pesquisa,
+      momentoOcorre: data.momentoOcorre,
+      problemaPesquisa: data.problemaPesquisa,
       metodologia: data.metodologia,
-      resultadosEsperados: data.resultados_esperados,
+      resultadosEsperados: data.resultadosEsperados,
       imagem: data.imagem,
-      professorCoordenadorId: data.professor_coordenador_id,
-      createdAt: data.created_at,
-      updatedAt: data.updated_at,
+      professorCoordenadorId: data.professorCoordenadorId,
+      createdAt: data.createdAt,
+      updatedAt: data.updatedAt,
     };
   } catch (error) {
     console.error("Erro ao buscar projeto de pesquisa:", error);
@@ -708,18 +728,18 @@ export async function createProjetoPesquisa(
 ): Promise<ProjetoPesquisa> {
   try {
     const { data, error } = await supabase
-      .from("projeto_pesquisa")
+      .from("ProjetoPesquisa")
       .insert([
         {
           titulo: projeto.titulo,
-          area_tematica: projeto.areaTematica,
+          areaTematica: projeto.areaTematica,
           descricao: projeto.descricao,
-          momento_ocorre: projeto.momentoOcorre,
-          problema_pesquisa: projeto.problemaPesquisa,
+          momentoOcorre: projeto.momentoOcorre,
+          problemaPesquisa: projeto.problemaPesquisa,
           metodologia: projeto.metodologia,
-          resultados_esperados: projeto.resultadosEsperados,
+          resultadosEsperados: projeto.resultadosEsperados,
           imagem: projeto.imagem,
-          professor_coordenador_id: projeto.professorCoordenadorId,
+          professorCoordenadorId: projeto.professorCoordenadorId,
         },
       ])
       .select()
@@ -730,16 +750,16 @@ export async function createProjetoPesquisa(
     return {
       id: data.id,
       titulo: data.titulo,
-      areaTematica: data.area_tematica,
+      areaTematica: data.areaTematica,
       descricao: data.descricao,
-      momentoOcorre: data.momento_ocorre,
-      problemaPesquisa: data.problema_pesquisa,
+      momentoOcorre: data.momentoOcorre,
+      problemaPesquisa: data.problemaPesquisa,
       metodologia: data.metodologia,
-      resultadosEsperados: data.resultados_esperados,
+      resultadosEsperados: data.resultadosEsperados,
       imagem: data.imagem,
-      professorCoordenadorId: data.professor_coordenador_id,
-      createdAt: data.created_at,
-      updatedAt: data.updated_at,
+      professorCoordenadorId: data.professorCoordenadorId,
+      createdAt: data.createdAt,
+      updatedAt: data.updatedAt,
     };
   } catch (error) {
     console.error("Erro ao criar projeto de pesquisa:", error);
@@ -754,18 +774,18 @@ export async function updateProjetoPesquisa(
   try {
     const updateData: Record<string, any> = {};
     if (updates.titulo) updateData.titulo = updates.titulo;
-    if (updates.areaTematica) updateData.area_tematica = updates.areaTematica;
+    if (updates.areaTematica) updateData.areaTematica = updates.areaTematica;
     if (updates.descricao) updateData.descricao = updates.descricao;
-    if (updates.momentoOcorre) updateData.momento_ocorre = updates.momentoOcorre;
+    if (updates.momentoOcorre) updateData.momentoOcorre = updates.momentoOcorre;
     if (updates.problemaPesquisa)
-      updateData.problema_pesquisa = updates.problemaPesquisa;
+      updateData.problemaPesquisa = updates.problemaPesquisa;
     if (updates.metodologia) updateData.metodologia = updates.metodologia;
     if (updates.resultadosEsperados)
-      updateData.resultados_esperados = updates.resultadosEsperados;
+      updateData.resultadosEsperados = updates.resultadosEsperados;
     if (updates.imagem) updateData.imagem = updates.imagem;
 
     const { data, error } = await supabase
-      .from("projeto_pesquisa")
+      .from("ProjetoPesquisa")
       .update(updateData)
       .eq("id", id)
       .select()
@@ -776,16 +796,16 @@ export async function updateProjetoPesquisa(
     return {
       id: data.id,
       titulo: data.titulo,
-      areaTematica: data.area_tematica,
+      areaTematica: data.areaTematica,
       descricao: data.descricao,
-      momentoOcorre: data.momento_ocorre,
-      problemaPesquisa: data.problema_pesquisa,
+      momentoOcorre: data.momentoOcorre,
+      problemaPesquisa: data.problemaPesquisa,
       metodologia: data.metodologia,
-      resultadosEsperados: data.resultados_esperados,
+      resultadosEsperados: data.resultadosEsperados,
       imagem: data.imagem,
-      professorCoordenadorId: data.professor_coordenador_id,
-      createdAt: data.created_at,
-      updatedAt: data.updated_at,
+      professorCoordenadorId: data.professorCoordenadorId,
+      createdAt: data.createdAt,
+      updatedAt: data.updatedAt,
     };
   } catch (error) {
     console.error("Erro ao atualizar projeto de pesquisa:", error);
@@ -796,7 +816,7 @@ export async function updateProjetoPesquisa(
 export async function deleteProjetoPesquisa(id: number): Promise<void> {
   try {
     const { error } = await supabase
-      .from("projeto_pesquisa")
+      .from("ProjetoPesquisa")
       .delete()
       .eq("id", id);
 
@@ -814,9 +834,9 @@ export async function deleteProjetoPesquisa(id: number): Promise<void> {
 export async function getProjetosExtensao(): Promise<ProjetoExtensao[]> {
   try {
     const { data, error } = await supabase
-      .from("projeto_extensao")
+      .from("ProjetoExtensao")
       .select("*")
-      .order("created_at", { ascending: false });
+      .order("createdAt", { ascending: false });
 
     if (error) {
       const errorMsg = error instanceof Error ? error.message : JSON.stringify(error);
@@ -826,15 +846,15 @@ export async function getProjetosExtensao(): Promise<ProjetoExtensao[]> {
     return (data || []).map((p: any) => ({
       id: p.id,
       titulo: p.titulo,
-      areaTematica: p.area_tematica,
+      areaTematica: p.areaTematica,
       descricao: p.descricao,
-      momentoOcorre: p.momento_ocorre,
-      tipoPessoasProcuram: p.tipo_pessoas_procuram,
-      comunidadeEnvolvida: p.comunidade_envolvida,
+      momentoOcorre: p.momentoOcorre,
+      tipoPessoasProcuram: p.tipoPessoasProcuram,
+      comunidadeEnvolvida: p.comunidadeEnvolvida,
       imagem: p.imagem,
-      professorCoordenadorId: p.professor_coordenador_id,
-      createdAt: p.created_at,
-      updatedAt: p.updated_at,
+      professorCoordenadorId: p.professorCoordenadorId,
+      createdAt: p.createdAt,
+      updatedAt: p.updatedAt,
     }));
   } catch (error) {
     const errorMsg = error instanceof Error ? error.message : JSON.stringify(error);
@@ -848,7 +868,7 @@ export async function getProjetoExtensaoById(
 ): Promise<ProjetoExtensao> {
   try {
     const { data, error } = await supabase
-      .from("projeto_extensao")
+      .from("ProjetoExtensao")
       .select("*")
       .eq("id", id)
       .single();
@@ -858,15 +878,15 @@ export async function getProjetoExtensaoById(
     return {
       id: data.id,
       titulo: data.titulo,
-      areaTematica: data.area_tematica,
+      areaTematica: data.areaTematica,
       descricao: data.descricao,
-      momentoOcorre: data.momento_ocorre,
-      tipoPessoasProcuram: data.tipo_pessoas_procuram,
-      comunidadeEnvolvida: data.comunidade_envolvida,
+      momentoOcorre: data.momentoOcorre,
+      tipoPessoasProcuram: data.tipoPessoasProcuram,
+      comunidadeEnvolvida: data.comunidadeEnvolvida,
       imagem: data.imagem,
-      professorCoordenadorId: data.professor_coordenador_id,
-      createdAt: data.created_at,
-      updatedAt: data.updated_at,
+      professorCoordenadorId: data.professorCoordenadorId,
+      createdAt: data.createdAt,
+      updatedAt: data.updatedAt,
     };
   } catch (error) {
     console.error("Erro ao buscar projeto de extensão:", error);
@@ -879,17 +899,17 @@ export async function createProjetoExtensao(
 ): Promise<ProjetoExtensao> {
   try {
     const { data, error } = await supabase
-      .from("projeto_extensao")
+      .from("ProjetoExtensao")
       .insert([
         {
           titulo: projeto.titulo,
-          area_tematica: projeto.areaTematica,
+          areaTematica: projeto.areaTematica,
           descricao: projeto.descricao,
-          momento_ocorre: projeto.momentoOcorre,
-          tipo_pessoas_procuram: projeto.tipoPessoasProcuram,
-          comunidade_envolvida: projeto.comunidadeEnvolvida,
+          momentoOcorre: projeto.momentoOcorre,
+          tipoPessoasProcuram: projeto.tipoPessoasProcuram,
+          comunidadeEnvolvida: projeto.comunidadeEnvolvida,
           imagem: projeto.imagem,
-          professor_coordenador_id: projeto.professorCoordenadorId,
+          professorCoordenadorId: projeto.professorCoordenadorId,
         },
       ])
       .select()
@@ -900,15 +920,15 @@ export async function createProjetoExtensao(
     return {
       id: data.id,
       titulo: data.titulo,
-      areaTematica: data.area_tematica,
+      areaTematica: data.areaTematica,
       descricao: data.descricao,
-      momentoOcorre: data.momento_ocorre,
-      tipoPessoasProcuram: data.tipo_pessoas_procuram,
-      comunidadeEnvolvida: data.comunidade_envolvida,
+      momentoOcorre: data.momentoOcorre,
+      tipoPessoasProcuram: data.tipoPessoasProcuram,
+      comunidadeEnvolvida: data.comunidadeEnvolvida,
       imagem: data.imagem,
-      professorCoordenadorId: data.professor_coordenador_id,
-      createdAt: data.created_at,
-      updatedAt: data.updated_at,
+      professorCoordenadorId: data.professorCoordenadorId,
+      createdAt: data.createdAt,
+      updatedAt: data.updatedAt,
     };
   } catch (error) {
     console.error("Erro ao criar projeto de extensão:", error);
@@ -923,17 +943,17 @@ export async function updateProjetoExtensao(
   try {
     const updateData: Record<string, any> = {};
     if (updates.titulo) updateData.titulo = updates.titulo;
-    if (updates.areaTematica) updateData.area_tematica = updates.areaTematica;
+    if (updates.areaTematica) updateData.areaTematica = updates.areaTematica;
     if (updates.descricao) updateData.descricao = updates.descricao;
-    if (updates.momentoOcorre) updateData.momento_ocorre = updates.momentoOcorre;
+    if (updates.momentoOcorre) updateData.momentoOcorre = updates.momentoOcorre;
     if (updates.tipoPessoasProcuram)
-      updateData.tipo_pessoas_procuram = updates.tipoPessoasProcuram;
+      updateData.tipoPessoasProcuram = updates.tipoPessoasProcuram;
     if (updates.comunidadeEnvolvida)
-      updateData.comunidade_envolvida = updates.comunidadeEnvolvida;
+      updateData.comunidadeEnvolvida = updates.comunidadeEnvolvida;
     if (updates.imagem) updateData.imagem = updates.imagem;
 
     const { data, error } = await supabase
-      .from("projeto_extensao")
+      .from("ProjetoExtensao")
       .update(updateData)
       .eq("id", id)
       .select()
@@ -944,15 +964,15 @@ export async function updateProjetoExtensao(
     return {
       id: data.id,
       titulo: data.titulo,
-      areaTematica: data.area_tematica,
+      areaTematica: data.areaTematica,
       descricao: data.descricao,
-      momentoOcorre: data.momento_ocorre,
-      tipoPessoasProcuram: data.tipo_pessoas_procuram,
-      comunidadeEnvolvida: data.comunidade_envolvida,
+      momentoOcorre: data.momentoOcorre,
+      tipoPessoasProcuram: data.tipoPessoasProcuram,
+      comunidadeEnvolvida: data.comunidadeEnvolvida,
       imagem: data.imagem,
-      professorCoordenadorId: data.professor_coordenador_id,
-      createdAt: data.created_at,
-      updatedAt: data.updated_at,
+      professorCoordenadorId: data.professorCoordenadorId,
+      createdAt: data.createdAt,
+      updatedAt: data.updatedAt,
     };
   } catch (error) {
     console.error("Erro ao atualizar projeto de extensão:", error);
@@ -963,7 +983,7 @@ export async function updateProjetoExtensao(
 export async function deleteProjetoExtensao(id: number): Promise<void> {
   try {
     const { error } = await supabase
-      .from("projeto_extensao")
+      .from("ProjetoExtensao")
       .delete()
       .eq("id", id);
 
