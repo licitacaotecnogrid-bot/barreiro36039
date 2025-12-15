@@ -245,9 +245,9 @@ export async function updateEvento(
 
     if (updates.odsAssociadas) {
       await supabase.from("ods_evento").delete().eq("evento_id", id);
-      const odsRecords = updates.odsAssociadas.map((ods) => ({
+      const odsRecords = updates.odsAssociadas.map((ods: any) => ({
         evento_id: id,
-        ods_numero: ods.odsNumero || ods.id,
+        ods_numero: typeof ods === "number" ? ods : (ods.odsNumero || ods.id),
       }));
       if (odsRecords.length > 0) {
         await supabase.from("ods_evento").insert(odsRecords);
@@ -256,9 +256,9 @@ export async function updateEvento(
 
     if (updates.anexos) {
       await supabase.from("anexo_evento").delete().eq("evento_id", id);
-      const anexoRecords = updates.anexos.map((anexo) => ({
+      const anexoRecords = updates.anexos.map((anexo: any) => ({
         evento_id: id,
-        nome: anexo.nome,
+        nome: typeof anexo === "string" ? anexo : anexo.nome,
       }));
       if (anexoRecords.length > 0) {
         await supabase.from("anexo_evento").insert(anexoRecords);
