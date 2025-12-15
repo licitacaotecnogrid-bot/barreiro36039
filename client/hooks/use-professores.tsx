@@ -1,6 +1,6 @@
 import React, { createContext, useState, useContext, ReactNode, useEffect } from "react";
 import type { ProfessorCoordenador } from "@/data/mock";
-import { getApiUrl } from "@/lib/api";
+import { supabase } from "@/lib/supabase";
 
 interface ProfessoresContextType {
   professores: ProfessorCoordenador[];
@@ -24,10 +24,22 @@ export function ProfessoresProvider({ children }: { children: ReactNode }) {
     try {
       setLoading(true);
       setError(null);
-      const response = await fetch(getApiUrl("/professores"));
-      if (!response.ok) throw new Error("Failed to fetch professores");
-      const data = await response.json();
-      setProfessores(data);
+      const { data, error: supabaseError } = await supabase
+        .from("Usuario")
+        .select("id, nome, email, senha, cargo")
+        .or("cargo.eq.Professor,cargo.eq.Coordenador");
+
+      if (supabaseError) throw supabaseError;
+
+      const professorData: ProfessorCoordenador[] = (data || []).map((u) => ({
+        id: u.id,
+        nome: u.nome,
+        email: u.email,
+        senha: u.senha,
+        curso: "",
+      }));
+
+      setProfessores(professorData);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erro ao buscar professores");
       setProfessores([]);
@@ -42,12 +54,20 @@ export function ProfessoresProvider({ children }: { children: ReactNode }) {
 
   const addProfessor = async (professor: Omit<ProfessorCoordenador, "id">) => {
     try {
-      const response = await fetch(getApiUrl("/professores"), {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(professor),
-      });
-      if (!response.ok) throw new Error("Failed to create professor");
+      const { data, error: supabaseError } = await supabase
+        .from("Usuario")
+        .insert([
+          {
+            nome: professor.nome,
+            email: professor.email,
+            senha: professor.senha,
+            cargo: "Professor",
+          },
+        ])
+        .select()
+        .single();
+
+      if (supabaseError) throw supabaseError;
       await fetchProfessores();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erro ao criar professor");
@@ -57,12 +77,16 @@ export function ProfessoresProvider({ children }: { children: ReactNode }) {
 
   const updateProfessor = async (id: number, updates: Partial<ProfessorCoordenador>) => {
     try {
-      const response = await fetch(getApiUrl(`/professores/${id}`), {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(updates),
-      });
-      if (!response.ok) throw new Error("Failed to update professor");
+      const { error: supabaseError } = await supabase
+        .from("Usuario")
+        .update({
+          nome: updates.nome,
+          email: updates.email,
+          senha: updates.senha,
+        })
+        .eq("id", id);
+
+      if (supabaseError) throw supabaseError;
       await fetchProfessores();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erro ao atualizar professor");
@@ -72,10 +96,12 @@ export function ProfessoresProvider({ children }: { children: ReactNode }) {
 
   const deleteProfessor = async (id: number) => {
     try {
-      const response = await fetch(getApiUrl(`/professores/${id}`), {
-        method: "DELETE",
-      });
-      if (!response.ok) throw new Error("Failed to delete professor");
+      const { error: supabaseError } = await supabase
+        .from("Usuario")
+        .delete()
+        .eq("id", id);
+
+      if (supabaseError) throw supabaseError;
       await fetchProfessores();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erro ao deletar professor");
