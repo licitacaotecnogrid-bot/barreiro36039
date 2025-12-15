@@ -2,33 +2,6 @@ import "dotenv/config";
 import express from "express";
 import cors from "cors";
 import { handleDemo } from "./routes/demo";
-import {
-  handleLogin,
-  handleGetUsuarios,
-  handleCreateUsuario,
-  handleUpdateUsuario,
-  handleDeleteUsuario,
-} from "./routes/usuarios";
-import {
-  handleGetEventos,
-  handleGetEventoById,
-  handleCreateEvento,
-  handleUpdateEvento,
-  handleDeleteEvento,
-} from "./routes/eventos";
-import {
-  handleGetComentarios,
-  handleCreateComentario,
-  handleDeleteComentario,
-  handleUpdateComentario,
-} from "./routes/comentarios";
-import {
-  usuarioQueries,
-  professorQueries,
-  projetoPesquisaQueries,
-  projetoExtensaoQueries,
-  materiaQueries,
-} from "./database";
 
 export function createServer() {
   const app = express();
